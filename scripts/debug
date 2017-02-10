@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+if [ $1 = "dev" ]; then
+  appname="Electron"
+else
+  appname="Cerebro"
+fi
+symlink="${HOME}/Library/Application Support/${appname}/plugins/node_modules/${PWD##*/}"
+ln -s "${PWD}" "$symlink"
+trap "rm \"$symlink\"" SIGHUP SIGINT SIGTERM
+./node_modules/.bin/webpack --watch
