@@ -5,6 +5,8 @@ const copyIcon = require('./CopyIcon.png');
 const noItemsIcon = require('./NoItemsIcon.png');
 
 
+const MAX_CLIPBOARD_ITEM_COUNT = 20;
+
 const clipboardStorage = [];
 
 startWatchingClipboard();
@@ -13,8 +15,6 @@ const plugin = ({term, display, actions}) => {
   const match = /clipboard\s(.*)/.exec(term);
   if (match && clipboardStorage.length) {
     const [, filter] = match;
-    console.log(clipboardStorage);
-    console.log(filter);
     const displayObjs = clipboardStorage.filter(({ type, value }) => {
       if (!filter) return true;
       if (type === 'image') {
@@ -24,8 +24,8 @@ const plugin = ({term, display, actions}) => {
     }).map(({ type, value }, i) => {
       const isImage = (type === 'image');
       return isImage ?
-        generateImageDisplay({ type, value, i+1 }) :
-        generateTextDisplay({ type, value, i+1 })
+        generateImageDisplay({ type, value, index: i + 1 }) :
+        generateTextDisplay({ type, value, index: i + 1 })
     });
     display(displayObjs);
   } else if (match) { // length == 0
@@ -43,10 +43,10 @@ module.exports = {
 }
 
 
-function generateTextDisplay({ type, value, i }) {
+function generateTextDisplay({ type, value, index }) {
   return {
     icon: copyIcon,
-    title: `${i}. ${value}`,
+    title: `${index}. ${value}`,
     onSelect: () => {
       actions.copyToClipboard(value);
       new Notification('Text copied to clipboard', {
@@ -61,10 +61,10 @@ function generateTextDisplay({ type, value, i }) {
   };
 }
 
-function generateImageDisplay({ type, value, i }) {
+function generateImageDisplay({ type, value, index }) {
   return {
     icon: copyIcon,
-    title: `${i}. Image`,
+    title: `${index}. Image`,
     onSelect: () => {
       clipboard.writeImage(value);
       new Notification('Image copied to clipboard');
@@ -82,33 +82,43 @@ function generateImageDisplay({ type, value, i }) {
 
 
 const imageDataUrlPreambleRegex = /^data:image\/.+;base64,.+/;
+const imageContentTypes = ['image/gif', 'image/png', 'image/jpeg', 'image/bmp', 'image/webp'];
 function startWatchingClipboard() {
-  setInterval(() => {
-    let clipboardImageValue = clipboard.readImage();
-    const clipboardTextValue = clipboard.readText();
+  setInterval(readClipboardAndSaveNewValues, 1000);
+}
 
-    const textIsImage = imageDataUrlPreambleRegex.test(clipboardTextValue);
-    let isImage = textIsImage;
-    if (textIsImage) {
-      clipboardImageValue = nativeImage.createFromDataURL(clipboardTextValue);
-    } else if (imageDataUrlPreambleRegex.test(clipboardImageValue.toDataURL())) {
-      isImage = true;
-    } else {
-      if (!clipboardTextValue || /^\s*$/.test(clipboardTextValue)) {
-        return;
-      }
+function readClipboardAndSaveNewValues() {
+  let clipboardImageValue;
+  const clipboardTextValue = clipboard.readText();
+
+  const clipboardAvailableFormats = clipboard.availableFormats();
+  const textIsImage = imageDataUrlPreambleRegex.test(clipboardTextValue);
+  let isImage = imageContentTypes.reduce((prevResult, imageContentType) => {
+    return prevResult || clipboardAvailableFormats.includes(imageContentType);
+  }, false);
+
+  if (isImage) {
+    clipboardImageValue = clipboard.readImage();
+  } else if (textIsImage) {
+    isImage = true;
+    clipboardImageValue = nativeImage.createFromDataURL(clipboardTextValue);
+  } else {
+    // make sure there is a non-falsy value
+    if (!clipboardTextValue || /^\s*$/.test(clipboardTextValue)) {
+      return;
     }
+  }
 
-    const clipboardValue = {
-      type: isImage ? 'image' : 'text',
-      value: isImage ? clipboardImageValue : clipboardTextValue
-    };
+  const clipboardValue = {
+    type: isImage ? 'image' : 'text',
+    value: isImage ? clipboardImageValue : clipboardTextValue
+  };
 
-    const lastValue = clipboardStorage[0];
-    if (!lastValue || !valuesAreEqual(lastValue, clipboardValue)) {
-      clipboardStorage.unshift(clipboardValue);
-    }
-  }, 1000);
+  const lastValue = clipboardStorage[0];
+  if (!lastValue || !valuesAreEqual(lastValue, clipboardValue)) {
+    clipboardStorage.unshift(clipboardValue);
+    clipboardStorage.length = MAX_CLIPBOARD_ITEM_COUNT;
+  }
 }
 
 function valuesAreEqual(prevValue, newValue) {
