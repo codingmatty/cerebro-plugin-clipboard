@@ -1,6 +1,6 @@
 # cerebro-clipboard
 
-> [Cerebro](https://cerebroapp.com) plugin to record and fetch list of items on clipboard.
+> [Cerebro](https://cerebroapp.com) plugin to record and recall list of items on clipboard.
 
 ![](screenshot.png)
 
@@ -14,10 +14,6 @@ Works with both text, as well as images.
 
 * Type `plugins clipboard` into Cerebro
 * Click `install`
-
-## Motivation
-
-This plugin was inspired by a similar Alfred Workflow.
 
 ## Related
 

@@ -1,9 +1,9 @@
 {
-  "name": "cerebro-lipsum",
+  "name": "cerebro-clipboard",
   "version": "1.0.0",
-  "description": "Cerebro plugin to generate lorem ipsum text from www.lipsum.com",
+  "description": "Cerebro plugin to record and recall list of items on clipboard",
   "license": "MIT",
-  "repository": "codingmatty/cerebro-plugin-lipsum",
+  "repository": "codingmatty/cerebro-plugin-clipboard",
   "author": {
     "name": "Matthew Jacobs",
     "email": "hello@mattjdev.com",
@@ -19,8 +19,7 @@
   },
   "main": "dist/index.js",
   "keywords": [
-    "lipsum",
-    "lorem ipsum",
+    "clipboard",
     "cerebro",
     "cerebro-plugin"
   ],
