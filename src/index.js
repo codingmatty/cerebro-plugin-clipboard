@@ -48,7 +48,7 @@ function generateTextDisplay({ type, value, index }) {
     icon: copyIcon,
     title: `${index}. ${value}`,
     onSelect: () => {
-      actions.copyToClipboard(value);
+      clipboard.writeText(value);
       new Notification('Text copied to clipboard', {
         body: value
       });
