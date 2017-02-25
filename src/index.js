@@ -9,11 +9,13 @@ const MAX_CLIPBOARD_ITEM_COUNT = 20;
 
 const clipboardStorage = [];
 
+let pauseWatching = false;
 startWatchingClipboard();
 
 const plugin = ({term, display, actions}) => {
   const match = /clipboard\s(.*)/.exec(term);
   if (match && clipboardStorage.length) {
+    pauseWatching = true;
     const [, filter] = match;
     const displayObjs = clipboardStorage.filter(({ type, value }) => {
       if (!filter) return true;
@@ -33,6 +35,8 @@ const plugin = ({term, display, actions}) => {
       icon: noItemsIcon,
       title: 'Nothing Found in Clipboard.'
     });
+  } else {
+    pauseWatching = false;
   }
 };
 
@@ -48,6 +52,7 @@ function generateTextDisplay({ type, value, index }) {
     icon: copyIcon,
     title: `${index}. ${value}`,
     onSelect: () => {
+      clipboardStorage.splice(index - 1, 1);
       clipboard.writeText(value);
       new Notification('Text copied to clipboard', {
         body: value
@@ -66,6 +71,7 @@ function generateImageDisplay({ type, value, index }) {
     icon: copyIcon,
     title: `${index}. Image`,
     onSelect: () => {
+      clipboardStorage.splice(index - 1, 1);
       clipboard.writeImage(value);
       new Notification('Image copied to clipboard');
     },
@@ -88,6 +94,7 @@ function startWatchingClipboard() {
 }
 
 function readClipboardAndSaveNewValues() {
+  if (pauseWatching) return;
   let clipboardImageValue;
   const clipboardTextValue = clipboard.readText();
 
