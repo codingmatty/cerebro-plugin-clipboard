@@ -2,6 +2,7 @@
 const React = require('react');
 const { clipboard, nativeImage } = require('electron');
 const copyIcon = require('./CopyIcon.png');
+const deleteIcon = require('./DeleteIcon.png');
 const noItemsIcon = require('./NoItemsIcon.png');
 
 
@@ -12,12 +13,32 @@ const clipboardStorage = [];
 let pauseWatching = false;
 startWatchingClipboard();
 
+
+const clearDisplayObj = {
+  icon: deleteIcon,
+  title: 'Clear Clipboard',
+  onSelect: () => {
+    clipboardStorage.length = 0;
+    clipboard.writeText('');
+    new Notification('Cleared Clipboard');
+  },
+  getPreview: () => (
+    <div style={{ whiteSpace: 'pre-wrap' }}>
+      <span>Clear currently stored Clipboard items, as well as item currently on clipboard.</span>
+    </div>
+  )
+}
+
 const plugin = ({term, display, actions}) => {
   const match = /clipboard\s(.*)/.exec(term);
   if (match && clipboardStorage.length) {
     pauseWatching = true;
     const [, filter] = match;
-    const displayObjs = clipboardStorage.filter(({ type, value }) => {
+    const displayObjs = [];
+    if (filter === 'clear') {
+      displayObjs.push(clearDisplayObj);
+    }
+    displayObjs.push(...clipboardStorage.filter(({ type, value }) => {
       if (!filter) return true;
       if (type === 'image') {
         return 'image'.startsWith(filter.toLowerCase());
@@ -28,7 +49,7 @@ const plugin = ({term, display, actions}) => {
       return isImage ?
         generateImageDisplay({ type, value, index: i + 1 }) :
         generateTextDisplay({ type, value, index: i + 1 })
-    });
+    }));
     display(displayObjs);
   } else if (match) { // length == 0
     display({
